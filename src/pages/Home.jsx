@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
 import Navbar from "@/components/weather/Navbar";
 import Footer from "@/components/weather/Footer";
 import WeatherBackground from "@/components/weather/WeatherBackground";
@@ -7,7 +8,6 @@ import CurrentWeather from "@/components/weather/CurrentWeather";
 import ForecastList from "@/components/weather/ForecastList";
 import WeatherRadar from "@/components/weather/WeatherRadar";
 import AdTile from "@/components/weather/AdTile";
-import HourlyForecast from "@/components/weather/HourlyForecast";
 
 const KARACHI = {
   name: "Karachi",
@@ -16,8 +16,6 @@ const KARACHI = {
   lon: 67.0011,
   label: "Karachi, PK",
 };
-
-const API_KEY = "4004522c01f147f2b7771023260108";
 
 export default function Home() {
   const [city, setCity] = useState(KARACHI);
@@ -30,99 +28,8 @@ export default function Home() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
-        );
-        if (!res.ok) throw new Error("Weather data fetch failed");
-        const weatherData = await res.json();
-
-        // Current weather formatting with complete visibility and metric mapping
-        const currentData = {
-          main: {
-            temp: weatherData.current.temp_c,
-            feels_like: weatherData.current.feelslike_c,
-            humidity: weatherData.current.humidity,
-            pressure: weatherData.current.pressure_mb,
-            visibility: weatherData.current.vis_km,
-          },
-          weather: [
-            {
-              main: weatherData.current.condition.text,
-              description: weatherData.current.condition.text,
-              icon: weatherData.current.condition.icon,
-            },
-          ],
-          wind: {
-            speed: weatherData.current.wind_kph,
-          },
-          vis_km: weatherData.current.vis_km, // Direct property mapping for safety
-          visibility: weatherData.current.vis_km, // Direct property mapping for safety
-          sys: {
-            country: weatherData.location.country,
-            sunrise: 0,
-            sunset: 0,
-          },
-        };
-
-        // Daily forecasts formatting
-        const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
-          dt: day.date_epoch,
-          dt_txt: `${day.date} 12:00:00`,
-          main: {
-            temp: day.day.avgtemp_c,
-            humidity: day.day.avghumidity,
-            pressure: 1013,
-            visibility: 10,
-          },
-          wind: {
-            speed: day.day.maxwind_kph,
-          },
-          clouds: {
-            all: day.day.condition.text.toLowerCase().includes("cloud") ? 60 : 10,
-          },
-          pop: (day.day.daily_chance_of_rain || 0) / 100,
-          calculated_max: day.day.maxtemp_c,
-          calculated_min: day.day.mintemp_c,
-          weather: [
-            {
-              main: day.day.condition.text,
-              description: day.day.condition.text,
-              icon: day.day.condition.icon,
-            },
-          ],
-        }));
-
-        // Hourly forecasts formatting
-        let hourlyForecasts = [];
-        weatherData.forecast.forecastday.forEach((day) => {
-          day.hour.forEach((h) => {
-            hourlyForecasts.push({
-              dt: h.time_epoch,
-              dt_txt: h.time,
-              main: {
-                temp: h.temp_c,
-                humidity: h.humidity,
-              },
-              wind: {
-                speed: h.wind_kph,
-              },
-              pop: (h.chance_of_rain || 0) / 100,
-              weather: [
-                {
-                  main: h.condition.text,
-                  description: h.condition.text,
-                  icon: h.condition.icon,
-                },
-              ],
-            });
-          });
-        });
-
-        setData({
-          current: currentData,
-          daily: dailyForecasts,
-          hourly: hourlyForecasts,
-        });
+        const res = await base44.functions.invoke("weatherData", { lat, lon });
+        setData(res.data);
       } catch (e) {
         setError("Unable to load weather. Please try again.");
       } finally {
@@ -133,25 +40,15 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          loadWeather(lat, lon);
-        },
-        () => {
-          loadWeather(city.lat, city.lon);
-        }
-      );
-    } else {
-      loadWeather(city.lat, city.lon);
-    }
-  }, [loadWeather, city.lat, city.lon]);
+    loadWeather(city.lat, city.lon);
+  }, [city, loadWeather]);
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
-  const isDay = true;
+  const now = Date.now() / 1000;
+  const isDay = data?.current?.sys
+    ? now > data.current.sys.sunrise && now < data.current.sys.sunset
+    : true;
 
   return (
     <div id="top" className="min-h-screen flex flex-col">
@@ -159,12 +56,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-10 space-y-12">
         <section className="flex justify-center">
-          <CitySearch
-            onSelect={(c) => {
-              setCity(c);
-              loadWeather(c.lat, c.lon);
-            }}
-          />
+          <CitySearch onSelect={(c) => setCity(c)} />
         </section>
 
         <section id="current" className="scroll-mt-20">
@@ -180,7 +72,6 @@ export default function Home() {
         </section>
 
         <section id="forecast" className="scroll-mt-20">
-          <HourlyForecast hourly={data?.hourly} />
           <ForecastList daily={data?.daily} />
         </section>
 
