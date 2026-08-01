@@ -36,14 +36,14 @@ export default function Home() {
         if (!res.ok) throw new Error("Weather data fetch failed");
         const weatherData = await res.json();
 
-        // Current weather formatting with fixed visibility (vis_km)
+        // Current weather formatting with visibility property explicitly added
         const currentData = {
           main: {
             temp: weatherData.current.temp_c,
             feels_like: weatherData.current.feelslike_c,
             humidity: weatherData.current.humidity,
             pressure: weatherData.current.pressure_mb,
-            visibility: weatherData.current.vis_km, // Fixed NaN issue
+            visibility: weatherData.current.vis_km, // <-- Yeh line zaroori hai
           },
           weather: [
             {
@@ -61,7 +61,7 @@ export default function Home() {
           },
         };
 
-        // Daily forecasts formatting with rain chance (pop)
+        // Daily forecasts formatting
         const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
           dt: day.date_epoch,
           dt_txt: `${day.date} 12:00:00`,
@@ -71,7 +71,7 @@ export default function Home() {
           },
           calculated_max: day.day.maxtemp_c,
           calculated_min: day.day.mintemp_c,
-          pop: (day.day.daily_chance_of_rain || 0) / 100, // Rain prediction percentage added
+          pop: (day.day.daily_chance_of_rain || 0) / 100,
           weather: [
             {
               main: day.day.condition.text,
@@ -81,7 +81,7 @@ export default function Home() {
           ],
         }));
 
-        // Hourly forecasts formatting with rain chance (pop)
+        // Hourly forecasts formatting
         let hourlyForecasts = [];
         weatherData.forecast.forecastday.forEach((day) => {
           day.hour.forEach((h) => {
@@ -92,7 +92,7 @@ export default function Home() {
                 temp: h.temp_c,
                 humidity: h.humidity,
               },
-              pop: (h.chance_of_rain || 0) / 100, // Hourly rain prediction added
+              pop: (h.chance_of_rain || 0) / 100,
               weather: [
                 {
                   main: h.condition.text,
