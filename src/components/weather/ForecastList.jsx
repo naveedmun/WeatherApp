@@ -6,8 +6,12 @@ export default function ForecastList({ daily }) {
   const [expanded, setExpanded] = useState(0);
   if (!daily || daily.length === 0) return null;
 
-  const highs = daily.map((d) => d.temp?.max ?? d.temp);
-  const lows = daily.map((d) => d.temp?.min ?? d.temp);
+  // Safe helper to extract high and low temperatures from any possible structure
+  const getHi = (d) => d.temp_max ?? d.temp?.max ?? d.max ?? d.temp;
+  const getLo = (d) => d.temp_min ?? d.temp?.min ?? d.min ?? d.temp;
+
+  const highs = daily.map((d) => getHi(d));
+  const lows = daily.map((d) => getLo(d));
   const maxTemp = Math.max(...highs);
   const minTemp = Math.min(...lows);
   const range = maxTemp - minTemp || 1;
@@ -17,11 +21,17 @@ export default function ForecastList({ daily }) {
       <h2 className="text-white text-2xl font-heading mb-4 px-1">Extended Forecast</h2>
       <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 overflow-hidden divide-y divide-white/10">
         {daily.slice(0, 10).map((day, i) => {
-          const hi = day.temp?.max ?? day.temp;
-          const lo = day.temp?.min ?? day.temp;
+          const hi = getHi(day);
+          const lo = getLo(day);
           const isOpen = expanded === i;
           const leftPct = ((lo - minTemp) / range) * 100;
           const widthPct = Math.max(((hi - lo) / range) * 100, 8);
+
+          // Safe helper for humidity, wind, and weather icon
+          const humidity = day.humidity ?? day.main?.humidity;
+          const windSpeed = day.wind_speed ?? day.wind?.speed;
+          const weatherIcon = day.weather?.[0]?.icon;
+
           return (
             <div key={i}>
               <button
@@ -31,7 +41,7 @@ export default function ForecastList({ daily }) {
                 <div className="w-14 text-white/80 text-sm font-medium shrink-0">
                   {i === 0 ? "Today" : moment.unix(day.dt).format("ddd")}
                 </div>
-                <div className="text-3xl shrink-0">{weatherEmoji(day.weather[0].icon)}</div>
+                <div className="text-3xl shrink-0">{weatherEmoji(weatherIcon)}</div>
                 <div className="text-cyan-200 text-xs w-9 shrink-0">
                   {day.pop > 0.05 ? `${Math.round(day.pop * 100)}%` : ""}
                 </div>
@@ -56,12 +66,12 @@ export default function ForecastList({ daily }) {
                   <Detail
                     icon={Droplets}
                     label="Humidity"
-                    value={day.humidity != null ? `${day.humidity}%` : "—"}
+                    value={humidity != null ? `${humidity}%` : "—"}
                   />
                   <Detail
                     icon={Wind}
                     label="Wind"
-                    value={day.wind_speed != null ? `${Math.round(day.wind_speed * 3.6)} km/h` : "—"}
+                    value={windSpeed != null ? `${Math.round(windSpeed)} km/h` : "—"}
                   />
                   <Detail
                     icon={Sun}
@@ -97,6 +107,7 @@ function Detail({ icon: Icon, label, value }) {
 
 function weatherEmoji(code) {
   if (!code) return "🌤️";
+  if (typeof code === "string" && code.startsWith("http")) return "🌤️"; // Handle WeatherAPI image URLs if passed
   if (code.startsWith("01")) return "☀️";
   if (code.startsWith("02")) return "🌤️";
   if (code.startsWith("03")) return "☁️";
