@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import moment from "moment";
-import { Droplets, Wind, Sun, ChevronDown } from "lucide-react";
+import { Droplets, Wind, Sun, ChevronDown, CloudRain } from "lucide-react";
 
 export default function ForecastList({ daily }) {
   const [expanded, setExpanded] = useState(0);
   if (!daily || daily.length === 0) return null;
 
-  // Safe helper to extract high and low temperatures from any possible structure
   const getHi = (d) => d.temp_max ?? d.temp?.max ?? d.max ?? d.temp;
   const getLo = (d) => d.temp_min ?? d.temp?.min ?? d.min ?? d.temp;
 
@@ -27,10 +26,10 @@ export default function ForecastList({ daily }) {
           const leftPct = ((lo - minTemp) / range) * 100;
           const widthPct = Math.max(((hi - lo) / range) * 100, 8);
 
-          // Safe helper for humidity, wind, and weather icon
           const humidity = day.humidity ?? day.main?.humidity;
           const windSpeed = day.wind_speed ?? day.wind?.speed;
           const weatherIcon = day.weather?.[0]?.icon;
+          const rainChance = Math.round((day.pop || 0) * 100);
 
           return (
             <div key={i}>
@@ -43,7 +42,7 @@ export default function ForecastList({ daily }) {
                 </div>
                 <div className="text-3xl shrink-0">{weatherEmoji(weatherIcon)}</div>
                 <div className="text-cyan-200 text-xs w-9 shrink-0">
-                  {day.pop > 0.05 ? `${Math.round(day.pop * 100)}%` : ""}
+                  {rainChance > 5 ? `${rainChance}%` : ""}
                 </div>
                 <div className="relative flex-1 h-2 bg-white/10 rounded-full overflow-hidden mx-2 hidden sm:block">
                   <div
@@ -78,10 +77,11 @@ export default function ForecastList({ daily }) {
                     label="UV Index"
                     value={day.uvi != null ? Math.round(day.uvi) : "—"}
                   />
+                  {/* Expanded view mein Rain Chance ke liye CloudRain icon */}
                   <Detail
-                    icon={Droplets}
+                    icon={CloudRain}
                     label="Rain Chance"
-                    value={`${Math.round((day.pop || 0) * 100)}%`}
+                    value={`${rainChance}%`}
                   />
                 </div>
               )}
@@ -107,15 +107,18 @@ function Detail({ icon: Icon, label, value }) {
 
 function weatherEmoji(code) {
   if (!code) return "🌤️";
-  if (typeof code === "string" && code.startsWith("http")) return "🌤️"; // Handle WeatherAPI image URLs if passed
-  if (code.startsWith("01")) return "☀️";
-  if (code.startsWith("02")) return "🌤️";
-  if (code.startsWith("03")) return "☁️";
-  if (code.startsWith("04")) return "☁️";
-  if (code.startsWith("09")) return "🌧️";
-  if (code.startsWith("10")) return "🌦️";
-  if (code.startsWith("11")) return "⛈️";
-  if (code.startsWith("13")) return "❄️";
-  if (code.startsWith("50")) return "🌫️";
+  if (typeof code === "string" && code.startsWith("http")) return "🌤️";
+  const codeMatch = String(code).match(/(\d+)\.png$/);
+  const cleanCode = codeMatch ? codeMatch[1] : String(code);
+
+  if (cleanCode.startsWith("01")) return "☀️";
+  if (cleanCode.startsWith("02")) return "🌤️";
+  if (cleanCode.startsWith("03")) return "☁️";
+  if (cleanCode.startsWith("04")) return "☁️";
+  if (cleanCode.startsWith("09")) return "🌧️";
+  if (cleanCode.startsWith("10")) return "🌦️";
+  if (cleanCode.startsWith("11")) return "⛈️";
+  if (cleanCode.startsWith("13")) return "❄️";
+  if (cleanCode.startsWith("50")) return "🌫️";
   return "🌤️";
 }
