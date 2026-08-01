@@ -1,6 +1,6 @@
 import React from "react";
 import moment from "moment";
-import { Droplets, Wind } from "lucide-react";
+import { Droplets } from "lucide-react";
 
 export default function HourlyForecast({ hourly }) {
   // Agar hourly data load na hua ho ya khali ho
@@ -20,6 +20,11 @@ export default function HourlyForecast({ hourly }) {
           const conditionText = hour.weather?.[0]?.description || "Clear";
           const capitalizedCondition = conditionText.charAt(0).toUpperCase() + conditionText.slice(1);
           const iconCode = hour.weather?.[0]?.icon;
+
+          // Rain chance calculation (supports pop between 0-1 or chance_of_rain percentage)
+          const rainChance = hour.pop != null 
+            ? Math.round(hour.pop * 100) 
+            : (hour.chance_of_rain ?? 0);
 
           return (
             <div
@@ -43,10 +48,17 @@ export default function HourlyForecast({ hourly }) {
 
               {/* 4. Mini Stats (Rain Chance / Humidity) */}
               <div className="flex flex-col gap-0.5 text-[11px] text-white/50 w-full border-t border-white/5 pt-2">
-                <div className="flex items-center justify-center gap-1 text-cyan-300">
-                  <Droplets className="w-3 h-3 shrink-0" />
-                  <span>{hour.main?.humidity ?? hour.humidity}%</span>
-                </div>
+                {rainChance > 0 ? (
+                  <div className="flex items-center justify-center gap-1 text-cyan-300 font-medium">
+                    <Droplets className="w-3 h-3 shrink-0" />
+                    <span>{rainChance}%</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-1 text-white/60">
+                    <Droplets className="w-3 h-3 shrink-0" />
+                    <span>{hour.main?.humidity ?? hour.humidity}%</span>
+                  </div>
+                )}
                 <div className="truncate text-[10px] text-white/40">
                   {capitalizedCondition}
                 </div>
