@@ -7,9 +7,9 @@ export default function CurrentWeather({ current, city }) {
   const temp = Math.round(current.main.temp);
   const condition = current.weather[0];
 
-  // Safe visibility value (agar meters mein ho ya kilometers mein, dono handle ho jayengi)
-  const rawVis = current.main.visibility ?? current.visibility ?? 10;
-  const visibilityKm = rawVis > 100 ? rawVis / 1000 : rawVis;
+  // Safe fallback for visibility (handles undefined/NaN gracefully)
+  const rawVis = current.main?.visibility ?? current.visibility ?? 10;
+  const visibilityKm = isNaN(rawVis) ? 10 : (rawVis > 100 ? rawVis / 1000 : rawVis);
 
   return (
     <div className="text-center text-white">
