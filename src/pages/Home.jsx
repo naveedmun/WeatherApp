@@ -73,26 +73,26 @@ export default function Home() {
         },
       };
 
-      const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
-        dt: day.date_epoch,
-        dt_txt: `${day.date} 12:00:00`,
-        temp_max: day.day.maxtemp_c,
-        temp_min: day.day.mintemp_c,
+      const dailyForecasts = weatherData.forecast.forecastday.map((d) => ({
+        dt: d.date_epoch,
+        dt_txt: `${d.date} 12:00:00`,
+        temp_max: d.day.maxtemp_c,
+        temp_min: d.day.mintemp_c,
         main: {
-          temp: day.day.avgtemp_c,
-          temp_max: day.day.maxtemp_c,
-          temp_min: day.day.mintemp_c,
-          humidity: day.day.avghumidity,
+          temp: d.day.avgtemp_c,
+          temp_max: d.day.maxtemp_c,
+          temp_min: d.day.mintemp_c,
+          humidity: d.day.avghumidity,
         },
-        humidity: day.day.avghumidity,
-        wind_speed: day.day.maxwind_kph,
-        uvi: day.day.uv,
-        pop: (day.day.daily_chance_of_rain || 0) / 100,
+        humidity: d.day.avghumidity,
+        wind_speed: d.day.maxwind_kph,
+        uvi: d.day.uv,
+        pop: (d.day.daily_chance_of_rain || 0) / 100,
         weather: [
           {
-            main: day.day.condition.text,
-            description: day.day.condition.text,
-            icon: day.day.condition.icon,
+            main: d.day.condition.text,
+            description: d.day.condition.text,
+            icon: d.day.condition.icon,
           },
         ],
       }));
