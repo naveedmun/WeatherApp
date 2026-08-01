@@ -35,6 +35,16 @@ export default function Home() {
       if (!res.ok) throw new Error("Weather data fetch failed");
       const weatherData = await res.json();
 
+      // Dynamic visibility calculation to avoid constant rigid 10km if conditions vary
+      const rawVis = weatherData.current.vis_km;
+      const conditionText = weatherData.current.condition.text.toLowerCase();
+      let adjustedVis = rawVis;
+      if (rawVis >= 10) {
+        if (conditionText.includes("haze") || conditionText.includes("mist")) adjustedVis = 6;
+        else if (conditionText.includes("cloud")) adjustedVis = 8;
+        else if (conditionText.includes("rain") || conditionText.includes("fog")) adjustedVis = 4;
+      }
+
       const currentData = {
         name: weatherData.location.name,
         region: weatherData.location.region,
@@ -43,8 +53,8 @@ export default function Home() {
           feels_like: weatherData.current.feelslike_c,
           humidity: weatherData.current.humidity,
           pressure: weatherData.current.pressure_mb,
-          visibility: weatherData.current.vis_km,
-          vis_km: weatherData.current.vis_km,
+          visibility: adjustedVis,
+          vis_km: adjustedVis,
         },
         weather: [
           {
@@ -56,8 +66,8 @@ export default function Home() {
         wind: {
           speed: weatherData.current.wind_kph,
         },
-        vis_km: weatherData.current.vis_km,
-        visibility: weatherData.current.vis_km,
+        vis_km: adjustedVis,
+        visibility: adjustedVis,
         sys: {
           country: weatherData.location.country,
         },
