@@ -25,12 +25,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadWeather = useCallback(async (lat, lon) => {
+  const loadWeather = useCallback(async (targetLat, targetLon) => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
+        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${targetLat},${targetLon}&days=5&aqi=no&alerts=no`
       );
       if (!res.ok) throw new Error("Weather data fetch failed");
       const weatherData = await res.json();
@@ -118,11 +118,6 @@ export default function Home() {
         hourly: hourlyForecasts,
       });
     } catch (e) {
-      // Fallback to Karachi if any search query fails
-      if (lat !== KARACHI.lat || lon !== KARACHI.lon) {
-        loadWeather(KARACHI.lat, KARACHI.lon);
-        return;
-      }
       setError("Unable to load weather. Please try again.");
     } finally {
       setLoading(false);
@@ -130,8 +125,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    loadWeather(KARACHI.lat, KARACHI.lon);
-  }, [loadWeather]);
+    loadWeather(city.lat, city.lon);
+  }, [city, loadWeather]);
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
@@ -146,7 +141,6 @@ export default function Home() {
           <CitySearch
             onSelect={(c) => {
               setCity(c);
-              loadWeather(c.lat, c.lon);
             }}
           />
         </section>
