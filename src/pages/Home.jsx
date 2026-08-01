@@ -17,7 +17,7 @@ const KARACHI = {
   label: "Karachi, PK",
 };
 
-const API_KEY = "969927f300a1463a63ade687d3ed564e";
+const API_KEY = "4004522c01f147f2b7771023260108";
 
 export default function Home() {
   const [city, setCity] = useState(KARACHI);
@@ -30,54 +30,82 @@ export default function Home() {
       setLoading(true);
       setError(null);
       try {
-        // 1. Current Weather Request
-        const currentRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        // 1. WeatherAPI Current & Forecast Request (WeatherAPI ek hi call mein current aur forecast dono de deta hai)
+        const res = await fetch(
+          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
         );
-        if (!currentRes.ok) throw new Error("Weather data fetch failed");
-        const currentData = await currentRes.json();
+        if (!res.ok) throw new Error("Weather data fetch failed");
+        const weatherData = await res.json();
 
-        // 2. Forecast Request (5 days / 3 hours)
-        const forecastRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-        );
-        
-        let dailyForecasts = [];
-        let hourlyForecasts = [];
+        // WeatherAPI data ko OpenWeatherMap ke format ke mutabiq map karna taake baaki components (CurrentWeather, ForecastList) na kharab hon:
+        const currentData = {
+          main: {
+            temp: weatherData.current.temp_c,
+            feels_like: weatherData.current.feelslike_c,
+            humidity: weatherData.current.humidity,
+            pressure: weatherData.current.pressure_mb,
+          },
+          weather: [
+            {
+              main: weatherData.current.condition.text,
+              description: weatherData.current.condition.text,
+              icon: weatherData.current.condition.icon,
+            },
+          ],
+          wind: {
+            speed: weatherData.current.wind_kph / 3.6, // m/s conversion
+          },
+          sys: {
+            sunrise: 0,
+            sunset: 0,
+          },
+        };
 
-        if (forecastRes.ok) {
-          const forecastData = await forecastRes.json();
-          hourlyForecasts = forecastData.list;
-
-          // Har din ke saare 3-hour blocks ko group karke exact High aur Low nikalne ka logic:
-          const groups = {};
-          forecastData.list.forEach((item) => {
-            const date = item.dt_txt.split(" ")[0]; // Get YYYY-MM-DD
-            if (!groups[date]) {
-              groups[date] = [];
-            }
-            groups[date].push(item);
-          });
-
-          // Ab har group (din) mein se actual min/max calculate karenge
-          dailyForecasts = Object.keys(groups).slice(0, 5).map((date) => {
-            const dayItems = groups[date];
-            
-            // Poore din mein se sab se kam aur sab se zyada temp nikalna
-            const temps = dayItems.map(item => item.main.temp);
-            const minTemp = Math.min(...temps);
-            const maxTemp = Math.max(...temps);
-
-            // Dopahar ka data use karenge icon aur text dikhane ke liye
-            const midDayItem = dayItems.find(item => item.dt_txt.includes("12:00:00")) || dayItems[0];
-
-            return {
-              ...midDayItem,
-              calculated_max: maxTemp,
-              calculated_min: minTemp,
-            };
-          });
+        // Update city name if WeatherAPI returns a more precise location/sub-locality
+        if (weatherData.location) {
+          const preciseName = weatherData.location.name;
+          const regionName = weatherData.location.region;
+          setCity((prev) => ({
+            ...prev,
+            name: preciseName,
+            label: `${preciseName}, ${regionName}`,
+          }));
         }
+
+        // Daily forecasts formatting
+        const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
+          dt_txt: `${day.date} 12:00:00`,
+          main: {
+            temp: day.day.avgtemp_c,
+          },
+          calculated_max: day.day.maxtemp_c,
+          calculated_min: day.day.mintemp_c,
+          weather: [
+            {
+              main: day.day.condition.text,
+              icon: day.day.condition.icon,
+            },
+          ],
+        }));
+
+        // Hourly forecasts formatting from WeatherAPI forecast hours
+        let hourlyForecasts = [];
+        weatherData.forecast.forecastday.forEach((day) => {
+          day.hour.forEach((h) => {
+            hourlyForecasts.push({
+              dt_txt: h.time,
+              main: {
+                temp: h.temp_c,
+              },
+              weather: [
+                {
+                  main: h.condition.text,
+                  icon: h.condition.icon,
+                },
+              ],
+            });
+          });
+        });
 
         setData({
           current: currentData,
@@ -97,31 +125,10 @@ export default function Home() {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
+        (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-          
-          try {
-            const geoRes = await fetch(
-              `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${API_KEY}`
-            );
-            const geoData = await geoRes.json();
-            const cityName = geoData[0]?.name || "Current Location";
-            const countryCode = geoData[0]?.country || "";
-
-            const detectedCity = {
-              name: cityName,
-              country: countryCode,
-              lat: lat,
-              lon: lon,
-              label: `${cityName}, ${countryCode}`,
-            };
-
-            setCity(detectedCity);
-            loadWeather(lat, lon);
-          } catch (err) {
-            loadWeather(lat, lon);
-          }
+          loadWeather(lat, lon);
         },
         (error) => {
           // Agar user location block karde toh default Karachi load hoga
@@ -135,10 +142,7 @@ export default function Home() {
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
-  const now = Date.now() / 1000;
-  const isDay = data?.current?.sys
-    ? now > data.current.sys.sunrise && now < data.current.sys.sunset
-    : true;
+  const isDay = true;
 
   return (
     <div id="top" className="min-h-screen flex flex-col">
