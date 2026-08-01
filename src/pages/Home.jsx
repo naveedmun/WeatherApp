@@ -30,20 +30,20 @@ export default function Home() {
       setLoading(true);
       setError(null);
       try {
-        // 1. WeatherAPI Current & Forecast Request (WeatherAPI ek hi call mein current aur forecast dono de deta hai)
         const res = await fetch(
           `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
         );
         if (!res.ok) throw new Error("Weather data fetch failed");
         const weatherData = await res.json();
 
-        // WeatherAPI data ko OpenWeatherMap ke format ke mutabiq map karna taake baaki components (CurrentWeather, ForecastList) na kharab hon:
+        // Current weather formatting with fixed visibility (vis_km)
         const currentData = {
           main: {
             temp: weatherData.current.temp_c,
             feels_like: weatherData.current.feelslike_c,
             humidity: weatherData.current.humidity,
             pressure: weatherData.current.pressure_mb,
+            visibility: weatherData.current.vis_km, // Fixed NaN issue
           },
           weather: [
             {
@@ -53,7 +53,7 @@ export default function Home() {
             },
           ],
           wind: {
-            speed: weatherData.current.wind_kph / 3.6, // m/s conversion
+            speed: weatherData.current.wind_kph / 3.6,
           },
           sys: {
             sunrise: 0,
@@ -61,45 +61,42 @@ export default function Home() {
           },
         };
 
-        // Update city name if WeatherAPI returns a more precise location/sub-locality
-        if (weatherData.location) {
-          const preciseName = weatherData.location.name;
-          const regionName = weatherData.location.region;
-          setCity((prev) => ({
-            ...prev,
-            name: preciseName,
-            label: `${preciseName}, ${regionName}`,
-          }));
-        }
-
-        // Daily forecasts formatting
+        // Daily forecasts formatting with rain chance (pop)
         const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
+          dt: day.date_epoch,
           dt_txt: `${day.date} 12:00:00`,
           main: {
             temp: day.day.avgtemp_c,
+            humidity: day.day.avghumidity,
           },
           calculated_max: day.day.maxtemp_c,
           calculated_min: day.day.mintemp_c,
+          pop: (day.day.daily_chance_of_rain || 0) / 100, // Rain prediction percentage added
           weather: [
             {
               main: day.day.condition.text,
+              description: day.day.condition.text,
               icon: day.day.condition.icon,
             },
           ],
         }));
 
-        // Hourly forecasts formatting from WeatherAPI forecast hours
+        // Hourly forecasts formatting with rain chance (pop)
         let hourlyForecasts = [];
         weatherData.forecast.forecastday.forEach((day) => {
           day.hour.forEach((h) => {
             hourlyForecasts.push({
+              dt: h.time_epoch,
               dt_txt: h.time,
               main: {
                 temp: h.temp_c,
+                humidity: h.humidity,
               },
+              pop: (h.chance_of_rain || 0) / 100, // Hourly rain prediction added
               weather: [
                 {
                   main: h.condition.text,
+                  description: h.condition.text,
                   icon: h.condition.icon,
                 },
               ],
@@ -121,7 +118,6 @@ export default function Home() {
     []
   );
 
-  // App khulte hi user ki live GPS location detect karne ka logic
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -130,15 +126,14 @@ export default function Home() {
           const lon = position.coords.longitude;
           loadWeather(lat, lon);
         },
-        (error) => {
-          // Agar user location block karde toh default Karachi load hoga
+        () => {
           loadWeather(city.lat, city.lon);
         }
       );
     } else {
       loadWeather(city.lat, city.lon);
     }
-  }, [loadWeather]);
+  }, [loadWeather, city.lat, city.lon]);
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
@@ -150,7 +145,12 @@ export default function Home() {
       <Navbar />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-10 space-y-12">
         <section className="flex justify-center">
-          <CitySearch onSelect={(c) => setCity(c)} />
+          <CitySearch
+            onSelect={(c) => {
+              setCity(c);
+              loadWeather(c.lat, c.lon);
+            }}
+          />
         </section>
 
         <section id="current" className="scroll-mt-20">

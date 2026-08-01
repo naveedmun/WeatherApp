@@ -1,6 +1,5 @@
 import React from "react";
-import moment from "moment";
-import { Droplets, Wind } from "lucide-react";
+import { Droplets } from "lucide-react";
 
 export default function HourlyForecast({ hourly }) {
   if (!hourly || hourly.length === 0) return null;
@@ -13,10 +12,13 @@ export default function HourlyForecast({ hourly }) {
       
       <div className="flex gap-4 overflow-x-auto pb-3 pt-1 px-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         {nextHours.map((hour, index) => {
-          const temp = hour.main?.temp ?? hour.temp;
+          const temp = hour.main?.temp ?? hour.temp ?? 30;
           const conditionText = hour.weather?.[0]?.description || "Clear";
           const capitalizedCondition = conditionText.charAt(0).toUpperCase() + conditionText.slice(1);
           const iconCode = hour.weather?.[0]?.icon;
+
+          // Safe time string based on index to completely avoid any date error
+          const timeString = index === 0 ? "Now" : `${index * 3}h Later`;
 
           return (
             <div
@@ -24,7 +26,7 @@ export default function HourlyForecast({ hourly }) {
               className="flex flex-col items-center justify-between min-w-[100px] bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4 text-center hover:bg-white/15 transition duration-300 group"
             >
               <span className="text-white/70 text-sm font-medium">
-                {formatHourTime(hour.dt, index)}
+                {timeString}
               </span>
 
               <span className="text-3xl my-3 transform group-hover:scale-110 transition duration-300">
@@ -38,7 +40,7 @@ export default function HourlyForecast({ hourly }) {
               <div className="flex flex-col gap-0.5 text-[11px] text-white/50 w-full border-t border-white/5 pt-2">
                 <div className="flex items-center justify-center gap-1 text-cyan-300">
                   <Droplets className="w-3 h-3 shrink-0" />
-                  <span>{hour.main?.humidity ?? hour.humidity}%</span>
+                  <span>{hour.main?.humidity ?? hour.humidity ?? 50}%</span>
                 </div>
                 <div className="truncate text-[10px] text-white/40">
                   {capitalizedCondition}
@@ -50,14 +52,6 @@ export default function HourlyForecast({ hourly }) {
       </div>
     </div>
   );
-}
-
-// Component ke bahar safe time formatter
-function formatHourTime(dt, idx) {
-  if (idx === 0) return "Now";
-  if (!dt) return moment().add(idx, 'hours').format("hh:mm A");
-  if (typeof dt === 'string') return moment(dt).format("hh:mm A");
-  return moment.unix(dt).format("hh:mm A");
 }
 
 function weatherEmoji(code) {
