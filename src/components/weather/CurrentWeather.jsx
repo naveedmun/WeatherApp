@@ -7,9 +7,9 @@ export default function CurrentWeather({ current, city }) {
   const temp = Math.round(current.main.temp);
   const condition = current.weather[0];
 
-   // Direct fallback with absolute safety against undefined or NaN
-  const rawVis = current?.main?.visibility ?? current?.visibility ?? 10;
-  const visibilityKm = (typeof rawVis === "number" && !isNaN(rawVis)) ? (rawVis > 100 ? rawVis / 1000 : rawVis) : 10;
+  // Direct safe visibility fallback (10 km default agar undefined ho)
+  const visibilityVal = current.main?.visibility ?? 10;
+
   return (
     <div className="text-center text-white">
       <div className="flex items-center justify-center gap-2 text-white/80 mb-2">
@@ -30,7 +30,7 @@ export default function CurrentWeather({ current, city }) {
         <Metric icon={Droplets} label="Humidity" value={`${current.main.humidity}%`} />
         <Metric icon={Wind} label="Wind" value={`${Math.round(current.wind.speed * 3.6)} km/h`} />
         <Metric icon={Gauge} label="Pressure" value={`${current.main.pressure} hPa`} />
-        <Metric icon={Eye} label="Visibility" value={`${visibilityKm.toFixed(1)} km`} />
+        <Metric icon={Eye} label="Visibility" value={`${visibilityVal} km`} />
       </div>
 
       {current.sys?.sunrise && current.sys?.sunset && (

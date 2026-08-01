@@ -1,184 +1,62 @@
-import React, { useState, useEffect, useCallback } from "react";
-import Navbar from "@/components/weather/Navbar";
-import Footer from "@/components/weather/Footer";
-import WeatherBackground from "@/components/weather/WeatherBackground";
-import CitySearch from "@/components/weather/CitySearch";
-import CurrentWeather from "@/components/weather/CurrentWeather";
-import ForecastList from "@/components/weather/ForecastList";
-import WeatherRadar from "@/components/weather/WeatherRadar";
-import AdTile from "@/components/weather/AdTile";
-import HourlyForecast from "@/components/weather/HourlyForecast";
+import React from "react";
+import { Droplets, Wind, Eye, Gauge, Sunrise, Sunset } from "lucide-react";
+import moment from "moment";
 
-const KARACHI = {
-  name: "Karachi",
-  country: "PK",
-  lat: 24.8607,
-  lon: 67.0011,
-  label: "Karachi, PK",
-};
+export default function CurrentWeather({ current, city }) {
+  if (!current) return null;
+  const temp = Math.round(current.main.temp);
+  const condition = current.weather[0];
 
-const API_KEY = "4004522c01f147f2b7771023260108";
-
-export default function Home() {
-  const [city, setCity] = useState(KARACHI);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const loadWeather = useCallback(
-    async (lat, lon) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(
-          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
-        );
-        if (!res.ok) throw new Error("Weather data fetch failed");
-        const weatherData = await res.json();
-
-        // Current weather formatting with visibility property explicitly added
-        const currentData = {
-          main: {
-            temp: weatherData.current.temp_c,
-            feels_like: weatherData.current.feelslike_c,
-            humidity: weatherData.current.humidity,
-            pressure: weatherData.current.pressure_mb,
-            visibility: weatherData.current.vis_km, // <-- Yeh line zaroori hai
-          },
-          weather: [
-            {
-              main: weatherData.current.condition.text,
-              description: weatherData.current.condition.text,
-              icon: weatherData.current.condition.icon,
-            },
-          ],
-          wind: {
-            speed: weatherData.current.wind_kph / 3.6,
-          },
-          sys: {
-            sunrise: 0,
-            sunset: 0,
-          },
-        };
-
-        // Daily forecasts formatting
-        const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
-          dt: day.date_epoch,
-          dt_txt: `${day.date} 12:00:00`,
-          main: {
-            temp: day.day.avgtemp_c,
-            humidity: day.day.avghumidity,
-          },
-          calculated_max: day.day.maxtemp_c,
-          calculated_min: day.day.mintemp_c,
-          pop: (day.day.daily_chance_of_rain || 0) / 100,
-          weather: [
-            {
-              main: day.day.condition.text,
-              description: day.day.condition.text,
-              icon: day.day.condition.icon,
-            },
-          ],
-        }));
-
-        // Hourly forecasts formatting
-        let hourlyForecasts = [];
-        weatherData.forecast.forecastday.forEach((day) => {
-          day.hour.forEach((h) => {
-            hourlyForecasts.push({
-              dt: h.time_epoch,
-              dt_txt: h.time,
-              main: {
-                temp: h.temp_c,
-                humidity: h.humidity,
-              },
-              pop: (h.chance_of_rain || 0) / 100,
-              weather: [
-                {
-                  main: h.condition.text,
-                  description: h.condition.text,
-                  icon: h.condition.icon,
-                },
-              ],
-            });
-          });
-        });
-
-        setData({
-          current: currentData,
-          daily: dailyForecasts,
-          hourly: hourlyForecasts,
-        });
-      } catch (e) {
-        setError("Unable to load weather. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          loadWeather(lat, lon);
-        },
-        () => {
-          loadWeather(city.lat, city.lon);
-        }
-      );
-    } else {
-      loadWeather(city.lat, city.lon);
-    }
-  }, [loadWeather, city.lat, city.lon]);
-
-  const temp = data?.current?.main?.temp;
-  const condition = data?.current?.weather?.[0]?.main;
-  const isDay = true;
+  // Direct safe visibility reading
+  const visibilityKm = current.main?.visibility ?? 10;
 
   return (
-    <div id="top" className="min-h-screen flex flex-col">
-      <WeatherBackground temperature={temp} condition={condition} isDay={isDay} />
-      <Navbar />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-10 space-y-12">
-        <section className="flex justify-center">
-          <CitySearch
-            onSelect={(c) => {
-              setCity(c);
-              loadWeather(c.lat, c.lon);
-            }}
-          />
-        </section>
+    <div className="text-center text-white">
+      <div className="flex items-center justify-center gap-2 text-white/80 mb-2">
+        <span className="text-2xl font-heading">{city?.name || current.name}</span>
+        <span className="text-white/40">·</span>
+        <span className="text-white/60">{current.sys?.country}</span>
+      </div>
+      <div
+        className="font-display font-bold leading-none"
+        style={{ fontSize: "clamp(5rem, 15vw, 11rem)" }}
+      >
+        {temp}°
+      </div>
+      <div className="text-2xl font-heading capitalize mt-2">{condition.description}</div>
+      <div className="text-white/70 mt-1">Feels like {Math.round(current.main.feels_like)}°C</div>
 
-        <section id="current" className="scroll-mt-20">
-          {loading && (
-            <div className="flex justify-center py-20">
-              <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-            </div>
-          )}
-          {error && <div className="text-center text-white/80 py-20">{error}</div>}
-          {!loading && !error && data?.current && (
-            <CurrentWeather current={data.current} city={city} />
-          )}
-        </section>
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
+        <Metric icon={Droplets} label="Humidity" value={`${current.main.humidity}%`} />
+        <Metric icon={Wind} label="Wind" value={`${Math.round(current.wind.speed * 3.6)} km/h`} />
+        <Metric icon={Gauge} label="Pressure" value={`${current.main.pressure} hPa`} />
+        <Metric icon={Eye} label="Visibility" value={`${Number(visibilityKm).toFixed(1)} km`} />
+      </div>
 
-        <section id="forecast" className="scroll-mt-20">
-          <HourlyForecast hourly={data?.hourly} />
-          <ForecastList daily={data?.daily} />
-        </section>
+      {current.sys?.sunrise && current.sys?.sunset && (
+        <div className="mt-4 flex items-center justify-center gap-6 text-white/70 text-sm">
+          <span className="flex items-center gap-1.5">
+            <Sunrise className="w-4 h-4 text-amber-300" />
+            {moment.unix(current.sys.sunrise).format("h:mm A")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Sunset className="w-4 h-4 text-orange-300" />
+            {moment.unix(current.sys.sunset).format("h:mm A")}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
-        <section>
-          <AdTile condition={condition} temperature={temp} />
-        </section>
-
-        <section id="radar" className="scroll-mt-20">
-          <WeatherRadar lat={city.lat} lon={city.lon} />
-        </section>
-      </main>
-      <Footer />
+function Metric({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 px-4 py-3">
+      <div className="flex items-center justify-center text-cyan-200">
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="text-lg font-semibold text-white mt-1">{value}</div>
+      <div className="text-xs text-white/60">{label}</div>
     </div>
   );
 }
