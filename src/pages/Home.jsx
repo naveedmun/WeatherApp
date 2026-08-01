@@ -17,7 +17,7 @@ const KARACHI = {
   label: "Karachi, PK",
 };
 
-const API_KEY = "4004522c01f147f2b7771023260108";
+const API_KEY = "4084522c01f147f2b771023260108";
 
 export default function Home() {
   const [city, setCity] = useState(KARACHI);
@@ -65,6 +65,8 @@ export default function Home() {
         dt_txt: `${day.date} 12:00:00`,
         main: {
           temp: day.day.avgtemp_c,
+          temp_max: day.day.maxtemp_c,
+          temp_min: day.day.mintemp_c,
           humidity: day.day.avghumidity,
           pressure: 1013,
           visibility: 10,
@@ -76,8 +78,6 @@ export default function Home() {
           all: day.day.condition.text.toLowerCase().includes("cloud") ? 60 : 10,
         },
         pop: (day.day.daily_chance_of_rain || 0) / 100,
-        calculated_max: day.day.maxtemp_c,
-        calculated_min: day.day.mintemp_c,
         weather: [
           {
             main: day.day.condition.text,
