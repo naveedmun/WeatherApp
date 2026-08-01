@@ -44,6 +44,7 @@ export default function Home() {
           humidity: weatherData.current.humidity,
           pressure: weatherData.current.pressure_mb,
           visibility: weatherData.current.vis_km,
+          vis_km: weatherData.current.vis_km,
         },
         weather: [
           {
@@ -56,6 +57,7 @@ export default function Home() {
           speed: weatherData.current.wind_kph,
         },
         vis_km: weatherData.current.vis_km,
+        visibility: weatherData.current.vis_km,
         sys: {
           country: weatherData.location.country,
         },
@@ -68,14 +70,18 @@ export default function Home() {
           temp: day.day.avgtemp_c,
           temp_max: day.day.maxtemp_c,
           temp_min: day.day.mintemp_c,
+          max: day.day.maxtemp_c,
+          min: day.day.mintemp_c,
           humidity: day.day.avghumidity,
           pressure: 1013,
           visibility: 10,
+          vis_km: 10,
         },
-        // ForecastList component ki compatibility ke liye direct properties bhi add kar di hain
         temp: day.day.avgtemp_c,
         temp_max: day.day.maxtemp_c,
         temp_min: day.day.mintemp_c,
+        max: day.day.maxtemp_c,
+        min: day.day.mintemp_c,
         humidity: day.day.avghumidity,
         visibility: 10,
         wind: {
