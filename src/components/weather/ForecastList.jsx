@@ -12,12 +12,25 @@ export default function ForecastList({ daily }) {
   const minTemp = Math.min(...lows);
   const range = maxTemp - minTemp || 1;
 
+  // Safe Date formatter to prevent "Invalid date"
+  const formatDayName = (dt, i) => {
+    if (i === 0) return "Today";
+    if (!dt) return moment().add(i, 'days').format("dddd");
+    if (typeof dt === 'string') return moment(dt).format("dddd");
+    return moment.unix(dt).format("dddd");
+  };
+
+  const formatDayDate = (dt, i) => {
+    if (!dt) return moment().add(i, 'days').format("DD MMM");
+    if (typeof dt === 'string') return moment(dt).format("DD MMM");
+    return moment.unix(dt).format("DD MMM");
+  };
+
   return (
     <div>
       <h2 className="text-white text-2xl font-heading mb-4 px-1">5-Day Extended Forecast</h2>
       <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 overflow-hidden divide-y divide-white/10">
         {daily.map((day, i) => {
-          // Home.jsx se calculate kiye hue actual High aur Low uthana
           const hi = day.calculated_max ?? day.main?.temp_max;
           const lo = day.calculated_min ?? day.main?.temp_min;
           
@@ -37,10 +50,10 @@ export default function ForecastList({ daily }) {
                 {/* 1. Din aur Date */}
                 <div className="w-28 shrink-0">
                   <div className="text-white font-semibold text-base">
-                    {i === 0 ? "Today" : moment.unix(day.dt).format("dddd")}
+                    {formatDayName(day.dt, i)}
                   </div>
                   <div className="text-white/50 text-xs">
-                    {moment.unix(day.dt).format("DD MMM")}
+                    {formatDayDate(day.dt, i)}
                   </div>
                 </div>
 
@@ -67,11 +80,9 @@ export default function ForecastList({ daily }) {
 
                 {/* 5. Distinct High & Low Displays */}
                 <div className="flex items-center gap-4 shrink-0 font-heading">
-                  {/* High (Din ka garam tareen temperature) */}
                   <span className="text-orange-300 font-bold text-base w-9 text-right">
                     {Math.round(hi)}°
                   </span>
-                  {/* Low (Raat/Subah ka thanda tareen temperature) */}
                   <span className="text-white/40 font-medium text-sm w-9 text-right">
                     {Math.round(lo)}°
                   </span>

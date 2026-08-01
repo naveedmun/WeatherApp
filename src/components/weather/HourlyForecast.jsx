@@ -21,6 +21,20 @@ export default function HourlyForecast({ hourly }) {
           const capitalizedCondition = conditionText.charAt(0).toUpperCase() + conditionText.slice(1);
           const iconCode = hour.weather?.[0]?.icon;
 
+          // Safe time formatting to avoid "Invalid date"
+          const formatHourTime = (dt, idx) => {
+            if (idx === 0) return "Now";
+            if (!dt) {
+              // Agar timestamp na ho toh current waqt mein ghantay add kar ke dikha do
+              return moment().add(idx, 'hours').format("hh:mm A");
+            }
+            // Agar dt string ho (jaise dt_txt) ya number
+            if (typeof dt === 'string') {
+              return moment(dt).format("hh:mm A");
+            }
+            return moment.unix(dt).format("hh:mm A");
+          };
+
           return (
             <div
               key={index}
@@ -28,7 +42,7 @@ export default function HourlyForecast({ hourly }) {
             >
               {/* 1. Time */}
               <span className="text-white/70 text-sm font-medium">
-                {index === 0 ? "Now" : moment.unix(hour.dt).format("hh:mm A")}
+                {formatHourTime(hour.dt, index)}
               </span>
 
               {/* 2. Weather Emoji / Icon */}
