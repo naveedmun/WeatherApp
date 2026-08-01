@@ -84,16 +84,19 @@ export default function Home() {
           min: day.day.mintemp_c,
           humidity: day.day.avghumidity,
           pressure: 1013,
-          visibility: 10,
-          vis_km: 10,
+          visibility: day.day.avgvis_km || 10,
+          vis_km: day.day.avgvis_km || 10,
         },
-        temp: day.day.avgtemp_c,
+        temp: {
+          max: day.day.maxtemp_c,
+          min: day.day.mintemp_c,
+          day: day.day.avgtemp_c,
+        },
         temp_max: day.day.maxtemp_c,
         temp_min: day.day.mintemp_c,
         max: day.day.maxtemp_c,
         min: day.day.mintemp_c,
         humidity: day.day.avghumidity,
-        visibility: 10,
         wind: {
           speed: day.day.maxwind_kph,
         },
@@ -109,7 +112,6 @@ export default function Home() {
           },
         ],
       }));
-
       let hourlyForecasts = [];
       weatherData.forecast.forecastday.forEach((day) => {
         day.hour.forEach((h) => {
