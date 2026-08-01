@@ -17,7 +17,7 @@ const KARACHI = {
   label: "Karachi, PK",
 };
 
-const API_KEY = "4004522c01f147f2b7771023260108";
+const API_KEY = "969927f300a1463a63ade687d3ed564e";
 
 export default function Home() {
   const [city, setCity] = useState(KARACHI);
@@ -25,112 +25,84 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadWeather = useCallback(async (queryParam) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${queryParam}&days=5&aqi=no&alerts=no`
-      );
-      if (!res.ok) throw new Error("Weather data fetch failed");
-      const weatherData = await res.json();
+  const loadWeather = useCallback(
+    async (lat, lon) => {
+      setLoading(true);
+      setError(null);
+      try {
+        // 1. Current Weather Request
+        const currentRes = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        );
+        if (!currentRes.ok) throw new Error("Weather data fetch failed");
+        const currentData = await currentRes.json();
 
-      const currentData = {
-        name: weatherData.location.name,
-        main: {
-          temp: weatherData.current.temp_c,
-          feels_like: weatherData.current.feelslike_c,
-          humidity: weatherData.current.humidity,
-          pressure: weatherData.current.pressure_mb,
-          visibility: weatherData.current.vis_km,
-        },
-        weather: [
-          {
-            main: weatherData.current.condition.text,
-            description: weatherData.current.condition.text,
-            icon: weatherData.current.condition.icon,
-          },
-        ],
-        wind: {
-          speed: weatherData.current.wind_kph,
-        },
-        vis_km: weatherData.current.vis_km,
-        sys: {
-          country: weatherData.location.country,
-        },
-      };
+        // 2. Forecast Request (5 days / 3 hours)
+        const forecastRes = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        );
+        
+        let dailyForecasts = [];
+        let hourlyForecasts = [];
 
-      const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
-        dt: day.date_epoch,
-        dt_txt: `${day.date} 12:00:00`,
-        main: {
-          temp: day.day.avgtemp_c,
-          humidity: day.day.avghumidity,
-          pressure: 1013,
-          visibility: 10,
-        },
-        wind: {
-          speed: day.day.maxwind_kph,
-        },
-        clouds: {
-          all: day.day.condition.text.toLowerCase().includes("cloud") ? 60 : 10,
-        },
-        pop: (day.day.daily_chance_of_rain || 0) / 100,
-        calculated_max: day.day.maxtemp_c,
-        calculated_min: day.day.mintemp_c,
-        weather: [
-          {
-            main: day.day.condition.text,
-            description: day.day.condition.text,
-            icon: day.day.condition.icon,
-          },
-        ],
-      }));
+        if (forecastRes.ok) {
+          const forecastData = await forecastRes.json();
+          hourlyForecasts = forecastData.list;
 
-      let hourlyForecasts = [];
-      weatherData.forecast.forecastday.forEach((day) => {
-        day.hour.forEach((h) => {
-          hourlyForecasts.push({
-            dt: h.time_epoch,
-            dt_txt: h.time,
-            main: {
-              temp: h.temp_c,
-              humidity: h.humidity,
-            },
-            wind: {
-              speed: h.wind_kph,
-            },
-            pop: (h.chance_of_rain || 0) / 100,
-            weather: [
-              {
-                main: h.condition.text,
-                description: h.condition.text,
-                icon: h.condition.icon,
-              },
-            ],
+          // Har din ke saare 3-hour blocks ko group karke exact High aur Low nikalne ka logic:
+          const groups = {};
+          forecastData.list.forEach((item) => {
+            const date = item.dt_txt.split(" ")[0]; // Get YYYY-MM-DD
+            if (!groups[date]) {
+              groups[date] = [];
+            }
+            groups[date].push(item);
           });
-        });
-      });
 
-      setData({
-        current: currentData,
-        daily: dailyForecasts,
-        hourly: hourlyForecasts,
-      });
-    } catch (e) {
-      setError("Unable to load weather. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+          // Ab har group (din) mein se actual min/max calculate karenge
+          dailyForecasts = Object.keys(groups).slice(0, 5).map((date) => {
+            const dayItems = groups[date];
+            
+            // Poore din mein se sab se kam aur sab se zyada temp nikalna
+            const temps = dayItems.map(item => item.main.temp);
+            const minTemp = Math.min(...temps);
+            const maxTemp = Math.max(...temps);
+
+            // Dopahar ka data use karenge icon aur text dikhane ke liye
+            const midDayItem = dayItems.find(item => item.dt_txt.includes("12:00:00")) || dayItems[0];
+
+            return {
+              ...midDayItem,
+              calculated_max: maxTemp,
+              calculated_min: minTemp,
+            };
+          });
+        }
+
+        setData({
+          current: currentData,
+          daily: dailyForecasts,
+          hourly: hourlyForecasts,
+        });
+      } catch (e) {
+        setError("Unable to load weather. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    loadWeather("Karachi");
-  }, [loadWeather]);
+    loadWeather(city.lat, city.lon);
+  }, [city, loadWeather]);
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
-  const isDay = true;
+  const now = Date.now() / 1000;
+  const isDay = data?.current?.sys
+    ? now > data.current.sys.sunrise && now < data.current.sys.sunset
+    : true;
 
   return (
     <div id="top" className="min-h-screen flex flex-col">
@@ -138,13 +110,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-10 space-y-12">
         <section className="flex justify-center">
-          <CitySearch
-            onSelect={(c) => {
-              setCity(c);
-              const query = c.name || `${c.lat},${c.lon}`;
-              loadWeather(query);
-            }}
-          />
+          <CitySearch onSelect={(c) => setCity(c)} />
         </section>
 
         <section id="current" className="scroll-mt-20">
