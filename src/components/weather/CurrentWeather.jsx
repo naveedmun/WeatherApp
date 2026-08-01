@@ -7,8 +7,8 @@ export default function CurrentWeather({ current, city }) {
   const temp = Math.round(current.main?.temp || 0);
   const condition = current.weather?.[0] || { description: "Clear" };
 
-  // Bulletproof visibility extraction (checks every possible object path)
-  const rawVis = current.main?.visibility ?? current.visibility ?? current.vis_km ?? 10;
+  // Fix: Direct WeatherAPI vis_km mapping
+  const rawVis = current.vis_km ?? current.main?.vis_km ?? current.main?.visibility ?? 10;
   const visibilityKm = !isNaN(Number(rawVis)) ? Number(rawVis) : 10;
 
   return (
