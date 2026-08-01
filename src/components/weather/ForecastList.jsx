@@ -6,11 +6,17 @@ export default function ForecastList({ daily }) {
   const [expanded, setExpanded] = useState(0);
   if (!daily || daily.length === 0) return null;
 
-  const getHi = (d) => d.temp_max ?? d.temp?.max ?? d.max ?? d.temp;
-  const getLo = (d) => d.temp_min ?? d.temp?.min ?? d.min ?? d.temp;
+  // Direct safe extractors for high and low temperatures
+  const getHi = (d) => {
+    return d.temp_max ?? d.main?.temp_max ?? d.temp?.max ?? d.max ?? 30;
+  };
+  
+  const getLo = (d) => {
+    return d.temp_min ?? d.main?.temp_min ?? d.temp?.min ?? d.min ?? 25;
+  };
 
-  const highs = daily.map((d) => getHi(d));
-  const lows = daily.map((d) => getLo(d));
+  const highs = daily.map((d) => Number(getHi(d)));
+  const lows = daily.map((d) => Number(getLo(d)));
   const maxTemp = Math.max(...highs);
   const minTemp = Math.min(...lows);
   const range = maxTemp - minTemp || 1;
@@ -20,8 +26,8 @@ export default function ForecastList({ daily }) {
       <h2 className="text-white text-2xl font-heading mb-4 px-1">Extended Forecast</h2>
       <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 overflow-hidden divide-y divide-white/10">
         {daily.slice(0, 10).map((day, i) => {
-          const hi = getHi(day);
-          const lo = getLo(day);
+          const hi = Number(getHi(day));
+          const lo = Number(getLo(day));
           const isOpen = expanded === i;
           const leftPct = ((lo - minTemp) / range) * 100;
           const widthPct = Math.max(((hi - lo) / range) * 100, 8);
@@ -77,7 +83,6 @@ export default function ForecastList({ daily }) {
                     label="UV Index"
                     value={day.uvi != null ? Math.round(day.uvi) : "—"}
                   />
-                  {/* Expanded view mein Rain Chance ke liye CloudRain icon */}
                   <Detail
                     icon={CloudRain}
                     label="Rain Chance"
