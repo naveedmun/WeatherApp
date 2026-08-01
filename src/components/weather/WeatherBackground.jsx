@@ -9,33 +9,43 @@ import {
   FogScene,
 } from "@/components/weather/WeatherScenes";
 
-// Dynamic "Living Horizon" background — a thermal gradient PLUS an animated weather scene
-// that matches the actual conditions (rain drops, sun glow, drifting clouds, snow, etc.)
 export default function WeatherBackground({ temperature, condition, isDay }) {
-  const { gradient, scene } = useMemo(() => {
+  const { bgImage, scene } = useMemo(() => {
     const t = temperature;
     const cond = (condition || "").toLowerCase();
-    let baseGradient;
+    let imageUrl = "";
+
     if (!isDay) {
-      baseGradient = "linear-gradient(180deg, #0B1026 0%, #1A1B3A 50%, #2D1B4E 100%)";
+      // Night nature scene (Stars / Moonlit Landscape)
+      imageUrl = "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=1920&q=80";
     } else if (cond.includes("thunder")) {
-      baseGradient = "linear-gradient(180deg, #2C3E50 0%, #4A3F5C 100%)";
+      // Thunderstorm Nature Scene (Lightning over hills)
+      imageUrl = "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?auto=format&fit=crop&w=1920&q=80";
     } else if (cond.includes("rain") || cond.includes("drizzle")) {
-      baseGradient = "linear-gradient(180deg, #2E6E8C 0%, #4FA0C4 100%)";
+      // Rainy Nature Scene (Rain drops on green leaves / forest)
+      imageUrl = "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=1920&q=80";
     } else if (cond.includes("snow")) {
-      baseGradient = "linear-gradient(180deg, #6B829E 0%, #C8DAEC 100%)";
-    } else if (t >= 38) {
-      baseGradient = "linear-gradient(180deg, #F24E1E 0%, #FFD600 100%)";
-    } else if (t >= 30) {
-      baseGradient = "linear-gradient(180deg, #FF6B35 0%, #FFB347 100%)";
-    } else if (t >= 20) {
-      baseGradient = "linear-gradient(180deg, #2E86DE 0%, #74C0E6 100%)";
-    } else if (t >= 10) {
-      baseGradient = "linear-gradient(180deg, #4A90D9 0%, #A0C8E8 100%)";
+      // Snowy Mountain Landscape
+      imageUrl = "https://images.unsplash.com/photo-1491002052546-bf38f186af56?auto=format&fit=crop&w=1920&q=80";
+    } else if (cond.includes("cloud")) {
+      // Cloudy Overcast Sky / Mountains
+      imageUrl = "https://images.unsplash.com/photo-1483702721041-b23de737a886?auto=format&fit=crop&w=1920&q=80";
+    } else if (
+      cond.includes("mist") ||
+      cond.includes("fog") ||
+      cond.includes("haze") ||
+      cond.includes("dust")
+    ) {
+      // Foggy Forest Nature Scene
+      imageUrl = "https://images.unsplash.com/photo-1487621167305-5d248087c724?auto=format&fit=crop&w=1920&q=80";
     } else {
-      baseGradient = "linear-gradient(180deg, #1A2B4C 0%, #A5C9FF 100%)";
+      // Clear Sunny Day Nature Scene (Sunny field / bright sky)
+      imageUrl = t >= 30 
+        ? "https://images.unsplash.com/photo-1504386106331-3e4e71712b38?auto=format&fit=crop&w=1920&q=80" // Hot day
+        : "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=80"; // Pleasant day
     }
 
+    // Scene animation logic remains same
     let sceneType = "none";
     if (cond.includes("thunder")) sceneType = "thunder";
     else if (cond.includes("rain") || cond.includes("drizzle")) sceneType = "rain";
@@ -51,15 +61,17 @@ export default function WeatherBackground({ temperature, condition, isDay }) {
     )
       sceneType = "fog";
 
-    return { gradient: baseGradient, scene: sceneType };
+    return { bgImage: imageUrl, scene: sceneType };
   }, [temperature, condition, isDay]);
 
   return (
     <div
-      className="fixed inset-0 -z-10 overflow-hidden transition-all duration-[2000ms] ease-in-out"
-      style={{ background: gradient }}
+      className="fixed inset-0 -z-10 overflow-hidden bg-cover bg-center bg-no-repeat transition-all duration-[2000ms] ease-in-out"
+      style={{ backgroundImage: `url(${bgImage})` }}
     >
-      <div className="absolute inset-0 bg-black/5" />
+      {/* Dark overlay taake weather text aur layers aaram se readable rahein aur content chhupe nahi */}
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]" />
+      
       {scene === "rain" && <RainScene />}
       {scene === "thunder" && <ThunderScene />}
       {scene === "snow" && <SnowScene />}
