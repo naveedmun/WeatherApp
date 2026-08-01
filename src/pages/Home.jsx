@@ -76,33 +76,17 @@ export default function Home() {
       const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
         dt: day.date_epoch,
         dt_txt: `${day.date} 12:00:00`,
+        temp_max: day.day.maxtemp_c,
+        temp_min: day.day.mintemp_c,
         main: {
           temp: day.day.avgtemp_c,
           temp_max: day.day.maxtemp_c,
           temp_min: day.day.mintemp_c,
-          max: day.day.maxtemp_c,
-          min: day.day.mintemp_c,
           humidity: day.day.avghumidity,
-          pressure: 1013,
-          visibility: day.day.avgvis_km || 10,
-          vis_km: day.day.avgvis_km || 10,
         },
-        temp: {
-          max: day.day.maxtemp_c,
-          min: day.day.mintemp_c,
-          day: day.day.avgtemp_c,
-        },
-        temp_max: day.day.maxtemp_c,
-        temp_min: day.day.mintemp_c,
-        max: day.day.maxtemp_c,
-        min: day.day.mintemp_c,
         humidity: day.day.avghumidity,
-        wind: {
-          speed: day.day.maxwind_kph,
-        },
-        clouds: {
-          all: day.day.condition.text.toLowerCase().includes("cloud") ? 60 : 10,
-        },
+        wind_speed: day.day.maxwind_kph,
+        uvi: day.day.uv,
         pop: (day.day.daily_chance_of_rain || 0) / 100,
         weather: [
           {
@@ -112,6 +96,7 @@ export default function Home() {
           },
         ],
       }));
+
       let hourlyForecasts = [];
       weatherData.forecast.forecastday.forEach((day) => {
         day.hour.forEach((h) => {
