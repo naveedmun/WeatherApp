@@ -36,7 +36,7 @@ export default function Home() {
         if (!res.ok) throw new Error("Weather data fetch failed");
         const weatherData = await res.json();
 
-        // Current weather formatting with direct WeatherAPI fields
+        // Current weather formatting with complete visibility and metric mapping
         const currentData = {
           main: {
             temp: weatherData.current.temp_c,
@@ -53,9 +53,10 @@ export default function Home() {
             },
           ],
           wind: {
-            speed: weatherData.current.wind_kph, // Stored directly as kph or handled properly
+            speed: weatherData.current.wind_kph,
           },
-          vis_km: weatherData.current.vis_km,
+          vis_km: weatherData.current.vis_km, // Direct property mapping for safety
+          visibility: weatherData.current.vis_km, // Direct property mapping for safety
           sys: {
             country: weatherData.location.country,
             sunrise: 0,
@@ -63,19 +64,21 @@ export default function Home() {
           },
         };
 
-        // Daily forecasts formatting with mapped properties for ForecastList
+        // Daily forecasts formatting
         const dailyForecasts = weatherData.forecast.forecastday.map((day) => ({
           dt: day.date_epoch,
           dt_txt: `${day.date} 12:00:00`,
           main: {
             temp: day.day.avgtemp_c,
             humidity: day.day.avghumidity,
+            pressure: 1013,
+            visibility: 10,
           },
           wind: {
             speed: day.day.maxwind_kph,
           },
           clouds: {
-            all: day.day.condition.text.includes("Cloud") ? 50 : 10,
+            all: day.day.condition.text.toLowerCase().includes("cloud") ? 60 : 10,
           },
           pop: (day.day.daily_chance_of_rain || 0) / 100,
           calculated_max: day.day.maxtemp_c,
