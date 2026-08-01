@@ -59,16 +59,24 @@ export default function HourlyForecast({ hourly }) {
   );
 }
 
-// Custom emoji handler based on OpenWeatherMap icon codes - Clear Version
-function weatherEmoji(code) {
-  if (!code) return "🌤️";
-  if (code.startsWith("01")) return code.endsWith("d") ? "☀️" : "🌙";
-  if (code.startsWith("02")) return code.endsWith("d") ? "🌤️" : "☁️";
-  if (code.startsWith("03") || code.startsWith("04")) return "☁️";
-  if (code.startsWith("09")) return "🌧️";
-  if (code.startsWith("10")) return "🌦️";
-  if (code.startsWith("11")) return "⛈️";
-  if (code.startsWith("13")) return "❄️";
-  if (code.startsWith("50")) return "🌫️";
+// Updated emoji handler compatible with WeatherAPI image paths or codes
+function weatherEmoji(iconInput) {
+  if (!iconInput) return "🌤️";
+  
+  // Extract code if it's a full URL path like "//cdn.weatherapi.com/.../116.png"
+  const codeMatch = String(iconInput).match(/(\d+)\.png$/);
+  const code = codeMatch ? codeMatch[1] : String(iconInput);
+
+  // WeatherAPI condition code mappings
+  if (code === "1000") return "☀️"; // Sunny / Clear
+  if (code === "1003") return "🌤️"; // Partly cloudy
+  if (code === "1006" || code === "1009") return "☁️"; // Cloudy / Overcast
+  if (code === "1030" || code === "1135" || code === "1147") return "🌫️"; // Mist / Fog
+  if (code >= "1063" && code <= "1195") return "🌧️"; // Patchy rain / Rain
+  if (code >= "1198" && code <= "1201") return "🌧️"; // Freezing rain
+  if (code >= "1210" && code <= "1237") return "❄️"; // Snow
+  if (code >= "1240" && code <= "1246") return "🌦️"; // Torrential rain showers
+  if (code >= "1273" && code <= "1282") return "⛈️"; // Thunderstorms
+
   return "🌤️";
 }
