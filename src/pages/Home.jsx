@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
 import Navbar from "@/components/weather/Navbar";
 import Footer from "@/components/weather/Footer";
 import WeatherBackground from "@/components/weather/WeatherBackground";
@@ -7,7 +8,6 @@ import CurrentWeather from "@/components/weather/CurrentWeather";
 import ForecastList from "@/components/weather/ForecastList";
 import WeatherRadar from "@/components/weather/WeatherRadar";
 import AdTile from "@/components/weather/AdTile";
-import HourlyForecast from "@/components/weather/HourlyForecast";
 
 const KARACHI = {
   name: "Karachi",
@@ -16,8 +16,6 @@ const KARACHI = {
   lon: 67.0011,
   label: "Karachi, PK",
 };
-
-const API_KEY = "969927f300a1463a63ade687d3ed564e";
 
 export default function Home() {
   const [city, setCity] = useState(KARACHI);
@@ -30,60 +28,8 @@ export default function Home() {
       setLoading(true);
       setError(null);
       try {
-        // 1. Current Weather Request
-        const currentRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-        );
-        if (!currentRes.ok) throw new Error("Weather data fetch failed");
-        const currentData = await currentRes.json();
-
-        // 2. Forecast Request (5 days / 3 hours)
-        const forecastRes = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-        );
-        
-        let dailyForecasts = [];
-        let hourlyForecasts = [];
-
-        if (forecastRes.ok) {
-          const forecastData = await forecastRes.json();
-          hourlyForecasts = forecastData.list;
-
-          // Har din ke saare 3-hour blocks ko group karke exact High aur Low nikalne ka logic:
-          const groups = {};
-          forecastData.list.forEach((item) => {
-            const date = item.dt_txt.split(" ")[0]; // Get YYYY-MM-DD
-            if (!groups[date]) {
-              groups[date] = [];
-            }
-            groups[date].push(item);
-          });
-
-          // Ab har group (din) mein se actual min/max calculate karenge
-          dailyForecasts = Object.keys(groups).slice(0, 5).map((date) => {
-            const dayItems = groups[date];
-            
-            // Poore din mein se sab se kam aur sab se zyada temp nikalna
-            const temps = dayItems.map(item => item.main.temp);
-            const minTemp = Math.min(...temps);
-            const maxTemp = Math.max(...temps);
-
-            // Dopahar ka data use karenge icon aur text dikhane ke liye
-            const midDayItem = dayItems.find(item => item.dt_txt.includes("12:00:00")) || dayItems[0];
-
-            return {
-              ...midDayItem,
-              calculated_max: maxTemp,
-              calculated_min: minTemp,
-            };
-          });
-        }
-
-        setData({
-          current: currentData,
-          daily: dailyForecasts,
-          hourly: hourlyForecasts,
-        });
+        const res = await base44.functions.invoke("weatherData", { lat, lon });
+        setData(res.data);
       } catch (e) {
         setError("Unable to load weather. Please try again.");
       } finally {
@@ -126,7 +72,6 @@ export default function Home() {
         </section>
 
         <section id="forecast" className="scroll-mt-20">
-          <HourlyForecast hourly={data?.hourly} />
           <ForecastList daily={data?.daily} />
         </section>
 
