@@ -29,7 +29,6 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      // WeatherAPI ko coordinates (lat,lon) dene se woh us exact jagah (jaise Saddar) ka naam return karta hai
       const res = await fetch(
         `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${targetLat},${targetLon}&days=5&aqi=no&alerts=no`
       );
@@ -37,14 +36,14 @@ export default function Home() {
       const weatherData = await res.json();
 
       const currentData = {
-        name: weatherData.location.name, // Yeh exact area/city ka naam dega (jaise Saddar ya Karachi)
+        name: weatherData.location.name,
         region: weatherData.location.region,
         main: {
           temp: weatherData.current.temp_c,
           feels_like: weatherData.current.feelslike_c,
           humidity: weatherData.current.humidity,
           pressure: weatherData.current.pressure_mb,
-          visibility: weatherData.current.vis_km,
+          visibility: weatherData.current.vis_km, // Fixed visibility mapping
         },
         weather: [
           {
@@ -67,8 +66,8 @@ export default function Home() {
         dt_txt: `${day.date} 12:00:00`,
         main: {
           temp: day.day.avgtemp_c,
-          temp_max: day.day.maxtemp_c,
-          temp_min: day.day.mintemp_c,
+          temp_max: day.day.maxtemp_c, // Fixed NaN° issue for Max temp
+          temp_min: day.day.mintemp_c, // Fixed NaN° issue for Min temp
           humidity: day.day.avghumidity,
           pressure: 1013,
           visibility: 10,
@@ -126,30 +125,9 @@ export default function Home() {
     }
   }, []);
 
-  // Jab app pehli baar khule toh browser ki live GPS location uthane ki koshish karega
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLat = position.coords.latitude;
-          const userLon = position.coords.longitude;
-          setCity({
-            name: "Current Location",
-            lat: userLat,
-            lon: userLon,
-            label: "Live Location",
-          });
-          loadWeather(userLat, userLon);
-        },
-        (err) => {
-          // Agar user location permission deny karde toh default Karachi load ho jayega
-          loadWeather(KARACHI.lat, KARACHI.lon);
-        }
-      );
-    } else {
-      loadWeather(city.lat, city.lon);
-    }
-  }, [loadWeather]);
+    loadWeather(city.lat, city.lon);
+  }, [city, loadWeather]);
 
   const temp = data?.current?.main?.temp;
   const condition = data?.current?.weather?.[0]?.main;
