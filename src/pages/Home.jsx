@@ -43,7 +43,7 @@ export default function Home() {
           feels_like: weatherData.current.feelslike_c,
           humidity: weatherData.current.humidity,
           pressure: weatherData.current.pressure_mb,
-          visibility: weatherData.current.vis_km, // Fixed visibility mapping
+          visibility: weatherData.current.vis_km,
         },
         weather: [
           {
@@ -66,12 +66,18 @@ export default function Home() {
         dt_txt: `${day.date} 12:00:00`,
         main: {
           temp: day.day.avgtemp_c,
-          temp_max: day.day.maxtemp_c, // Fixed NaN° issue for Max temp
-          temp_min: day.day.mintemp_c, // Fixed NaN° issue for Min temp
+          temp_max: day.day.maxtemp_c,
+          temp_min: day.day.mintemp_c,
           humidity: day.day.avghumidity,
           pressure: 1013,
           visibility: 10,
         },
+        // ForecastList component ki compatibility ke liye direct properties bhi add kar di hain
+        temp: day.day.avgtemp_c,
+        temp_max: day.day.maxtemp_c,
+        temp_min: day.day.mintemp_c,
+        humidity: day.day.avghumidity,
+        visibility: 10,
         wind: {
           speed: day.day.maxwind_kph,
         },
