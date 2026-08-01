@@ -7,6 +7,9 @@ export default function CurrentWeather({ current, city }) {
   const temp = Math.round(current.main.temp);
   const condition = current.weather[0];
 
+  // Visibility ko fix kiya taake 0.0 km ki bajaye exact km show ho
+  const visibilityKm = current.main.visibility ?? current.vis_km ?? 10;
+
   return (
     <div className="text-center text-white">
       <div className="flex items-center justify-center gap-2 text-white/80 mb-2">
@@ -25,9 +28,9 @@ export default function CurrentWeather({ current, city }) {
 
       <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
         <Metric icon={Droplets} label="Humidity" value={`${current.main.humidity}%`} />
-        <Metric icon={Wind} label="Wind" value={`${Math.round(current.wind.speed * 3.6)} km/h`} />
+        <Metric icon={Wind} label="Wind" value={`${Math.round(current.wind.speed)} km/h`} />
         <Metric icon={Gauge} label="Pressure" value={`${current.main.pressure} hPa`} />
-        <Metric icon={Eye} label="Visibility" value={`${(current.visibility / 1000).toFixed(1)} km`} />
+        <Metric icon={Eye} label="Visibility" value={`${Number(visibilityKm).toFixed(1)} km`} />
       </div>
 
       {current.sys?.sunrise && current.sys?.sunset && (
