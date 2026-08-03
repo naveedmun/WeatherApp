@@ -68,27 +68,23 @@ function weatherEmoji(iconInput, rainChance = 0) {
   const codeMatch = String(iconInput).match(/(\d+)\.png$/);
   const code = codeMatch ? codeMatch[1] : String(iconInput);
 
-  // Agar barish ka chance 30% se kam hai, toh barish wala icon forcefully avoid karein
-  if (rainChance < 30) {
-    if (code === "1063" || (code >= "1180" && code <= "1201") || (code >= "1240" && code <= "1246")) {
-      return "⛅"; // Halkay badal ya sunny/cloudy dikhayein agar barish na honay ke barabar hai
-    }
+  // Agar rain chance 40% se kam hai, toh strictly sirf clean sunny/cloudy icons rahenge
+  if (rainChance < 40) {
+    if (code === "1000") return "☀️";
+    if (code === "1003") return "🌤️";
+    if (code === "1006" || code === "1009") return "☁️";
+    if (code >= "1030" && code <= "1147") return "🌫️";
+    // Agar koi bhi aisa code ho jo ghalat tarike se barf ya barish utha raha ho, usay override karke cloudy/partly cloudy kar dein
+    return "⛅"; 
   }
 
+  // Jab rain chance 40% ya us se zyada hoga, tabhi proper barish/storm ke icons aayेंगे
   if (code === "1000") return "☀️";
   if (code === "1003") return "🌤️";
   if (code === "1006" || code === "1009") return "☁️";
-  if (code === "1030" || code === "1135" || code === "1147") return "🌫️";
-  
-  // Barish ke icons sirf tab aayenge jab rainChance >= 30% ho
-  if (rainChance >= 30) {
-    if (code >= "1063" && code <= "1195") return "🌧️";
-    if (code >= "1198" && code <= "1201") return "🌧️";
-    if (code >= "1240" && code <= "1246") return "🌦️";
-  }
-
-  if (code >= "1210" && code <= "1237") return "❄️";
+  if (code >= "1063" && code <= "1195") return "🌧️";
+  if (code >= "1240" && code <= "1246") return "🌦️";
   if (code >= "1273" && code <= "1282") return "⛈️";
 
-  return "🌤️";
+  return "⛅";
 }
