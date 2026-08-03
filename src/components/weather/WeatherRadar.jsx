@@ -23,21 +23,21 @@ export default function WeatherRadar({ lat, lon }) {
           center={center}
           zoom={6}
           style={{ height: "100%", width: "100%" }}
-          className="bg-slate-900"
+          className="bg-slate-100"
           zoomControl={true}
         >
           <ChangeView center={center} />
           
-          {/* Dark Base Map taake badal aur radar glowing/clear nazar aayein */}
+          {/* Light Standard Map taake shahar, road aur boundaries bilkul clear dikhein */}
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
           />
           
-          {/* RainViewer Live Radar & Cloud Layer (Bghair kisi API key ke free aur fast live clouds) */}
+          {/* RainViewer Live Radar & Cloud Layer */}
           <TileLayer
             url="https://tile.rainviewer.com/v2/radar/nowcast/{z}/{x}/{y}/256/2/1_1.png"
-            opacity={0.8}
+            opacity={0.75}
           />
           
           {/* Location Marker */}
