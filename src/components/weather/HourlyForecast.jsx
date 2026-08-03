@@ -32,7 +32,7 @@ export default function HourlyForecast({ hourly }) {
               </span>
 
               <span className="text-3xl my-3 transform group-hover:scale-110 transition duration-300">
-                {weatherEmoji(iconCode)}
+                {weatherEmoji(iconCode, rainChance)}
               </span>
 
               <span className="text-white font-bold text-lg mb-2">
@@ -42,13 +42,11 @@ export default function HourlyForecast({ hourly }) {
               <div className="flex flex-col gap-0.5 text-[11px] text-white/50 w-full border-t border-white/5 pt-2">
                 {rainChance > 0 ? (
                   <div className="flex items-center justify-center gap-1 text-cyan-300 font-medium">
-                    {/* Rain ke liye alag CloudRain icon */}
                     <CloudRain className="w-3 h-3 shrink-0" />
                     <span>{rainChance}%</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-1 text-white/60">
-                    {/* Humidity ke liye Droplets icon */}
                     <Droplets className="w-3 h-3 shrink-0" />
                     <span>{hour.main?.humidity ?? hour.humidity}%</span>
                   </div>
@@ -65,19 +63,31 @@ export default function HourlyForecast({ hourly }) {
   );
 }
 
-function weatherEmoji(iconInput) {
+function weatherEmoji(iconInput, rainChance = 0) {
   if (!iconInput) return "🌤️";
   const codeMatch = String(iconInput).match(/(\d+)\.png$/);
   const code = codeMatch ? codeMatch[1] : String(iconInput);
+
+  // Agar barish ka chance 30% se kam hai, toh barish wala icon forcefully avoid karein
+  if (rainChance < 30) {
+    if (code === "1063" || (code >= "1180" && code <= "1201") || (code >= "1240" && code <= "1246")) {
+      return "⛅"; // Halkay badal ya sunny/cloudy dikhayein agar barish na honay ke barabar hai
+    }
+  }
 
   if (code === "1000") return "☀️";
   if (code === "1003") return "🌤️";
   if (code === "1006" || code === "1009") return "☁️";
   if (code === "1030" || code === "1135" || code === "1147") return "🌫️";
-  if (code >= "1063" && code <= "1195") return "🌧️";
-  if (code >= "1198" && code <= "1201") return "🌧️";
+  
+  // Barish ke icons sirf tab aayenge jab rainChance >= 30% ho
+  if (rainChance >= 30) {
+    if (code >= "1063" && code <= "1195") return "🌧️";
+    if (code >= "1198" && code <= "1201") return "🌧️";
+    if (code >= "1240" && code <= "1246") return "🌦️";
+  }
+
   if (code >= "1210" && code <= "1237") return "❄️";
-  if (code >= "1240" && code <= "1246") return "🌦️";
   if (code >= "1273" && code <= "1282") return "⛈️";
 
   return "🌤️";
