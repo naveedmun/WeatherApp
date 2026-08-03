@@ -32,7 +32,7 @@ export default function HourlyForecast({ hourly }) {
               </span>
 
               <span className="text-3xl my-3 transform group-hover:scale-110 transition duration-300">
-                {weatherEmoji(iconCode, rainChance)}
+                {weatherEmoji(iconCode, rainChance, hour.dt)}
               </span>
 
               <span className="text-white font-bold text-lg mb-2">
@@ -64,9 +64,6 @@ export default function HourlyForecast({ hourly }) {
 }
 
 function weatherEmoji(iconInput, rainChance = 0, hourEpoch = null) {
-  if (!iconInput) return "🌤️";
-  
-  // Check karein ke kya waqt raat ka hai (evening/night)
   let isNight = false;
   if (hourEpoch) {
     const hourMoment = moment.unix(hourEpoch);
@@ -77,6 +74,8 @@ function weatherEmoji(iconInput, rainChance = 0, hourEpoch = null) {
     }
   }
 
+  if (!iconInput) return isNight ? "🌙" : "🌤️";
+  
   const codeMatch = String(iconInput).match(/(\d+)\.png$/);
   const code = codeMatch ? codeMatch[1] : String(iconInput);
 
