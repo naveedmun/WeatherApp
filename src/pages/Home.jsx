@@ -98,27 +98,32 @@ export default function Home() {
       }));
 
       let hourlyForecasts = [];
+      const currentEpoch = Math.floor(Date.now() / 1000);
+
       weatherData.forecast.forecastday.forEach((day) => {
         day.hour.forEach((h) => {
-          hourlyForecasts.push({
-            dt: h.time_epoch,
-            dt_txt: h.time,
-            main: {
-              temp: h.temp_c,
-              humidity: h.humidity,
-            },
-            wind: {
-              speed: h.wind_kph,
-            },
-            pop: (h.chance_of_rain || 0) / 100,
-            weather: [
-              {
-                main: h.condition.text,
-                description: h.condition.text,
-                icon: h.condition.icon,
+          // Sirf wahi hourly data rakhein jo current time ya uske baad ka ho
+          if (h.time_epoch >= currentEpoch - 3600) {
+            hourlyForecasts.push({
+              dt: h.time_epoch,
+              dt_txt: h.time,
+              main: {
+                temp: h.temp_c,
+                humidity: h.humidity,
               },
-            ],
-          });
+              wind: {
+                speed: h.wind_kph,
+              },
+              pop: (h.chance_of_rain || 0) / 100,
+              weather: [
+                {
+                  main: h.condition.text,
+                  description: h.condition.text,
+                  icon: h.condition.icon,
+                },
+              ],
+            });
+          }
         });
       });
 
